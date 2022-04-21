@@ -8,7 +8,7 @@ const commentController = {
             .then(({ _id }) => {
                 return Pizza.findOneAndUpdate(
                     { _id: params.pizzaId },
-                    { $push: { comments: _id } },
+                    { $push: { comments: _id } }, 
                     { new: true }
                 );
             })
@@ -22,6 +22,37 @@ const commentController = {
             .catch(err => res.json(err));
     },
 
+    // add a reply
+    // here we're updating an exisiting comment
+    addReply({ params, body }, res) {
+        Comment.findOneAndUpdate(
+            { _id: params.commentId },
+            { $push: { replies: body } },
+            { new: true },
+        )
+            .then(dbPizzaData => {
+                if (!dbPizzaData) {
+                    res.status(404).json({ message: 'No pizza found with this id!'});
+                    return;
+                }
+                res.json(dbPizzaData);
+            })
+            .catch(err => res.json(err));
+    },
+    
+    // remove reply from comment 
+    removeReply({ params }, res) {
+        Comment.findOneAndUpdate(
+            { _id: params.commentId },
+            { $pull: { replies: {params: params.replyId } } }, 
+            // pull: removes the specific reply from the replies ARRAY where replyId matches 
+            // the value of params.replyId passed into the route
+            { new: true },
+        )
+            .then(dbPizzaData => res.json(dbPizzaData))
+            .catch(err => res.json(err));
+    },
+
     // remove comment
     removeComment({ params }, res) {
         Comment.findOneAndDelete({ _id: params.commentId })
@@ -32,6 +63,7 @@ const commentController = {
                 return Pizza.findOneAndUpdate(
                     { _id: params.pizzaId },
                     { $pull: { comments: params.commentId } },
+                    // pull: Removes all array elements that match a specified query.
                     { new: true }
                 );
             })

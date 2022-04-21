@@ -1,20 +1,70 @@
-const { Schema, model } = require('mongoose');
+const { Schema, model, Types } = require('mongoose');
+const dateFormat = require('../utils/dateFormat.js');
 
-const commentSchema = new Schema({
-    writtenBy: {
-        type: String,
+// subdocument
+const ReplySchema = new Schema(
+    {
+        // set custom id to avoid confusion with parent comment _id
+        replyId: {
+            type: Schema.Types.ObjectId,
+            default: () => new Types.ObjectId()
+        },
+        replyBody: {
+            type: String
+        },
+        writtenBy: {
+            type: String
+        },
+        createdAt: {
+            type: Date,
+            default: Date.now,
+            get: createdAtVal => dateFormat(createdAtVal)
+            // everytime we retrieve a pizza, the value in 'createdAt' field will be formatted by dateFormat(), instead of the default timestamp value
+        }
     },
-
-    commentBody: {
-        type: String,
-    },
-
-    createdAt: {
-        type: Date,
-        defualt: Date.now
+    {
+        toJSON: {
+            getters: true
+        }
     }
-});
+);
 
-const Comment = model('Comment', commentSchema);
+const CommentSchema = new Schema(
+    {
+        writtenBy: {
+            type: String,
+        },
+
+        commentBody: {
+            type: String,
+        },
+
+        createdAt: {
+            type: Date,
+            default: Date.now,
+            get: createdAtVal => dateFormat(createdAtVal)
+            // everytime we retrieve a pizza, the value in 'createdAt' field will be formatted by dateFormat(), instead of the default timestamp value
+        },
+
+        // associating replies with comments 
+        // use ReplySchema to validate data for a reply
+        // we push and pull from this array whenever were doing routes
+        replies: [ReplySchema]
+    },
+    {
+        toJSON: {
+            virtuals: true,
+            getters: true
+        },
+        id: false,
+    }
+);
+
+// get total count of replies on retrieval
+CommentSchema.virtual('replyCount').get(function () {
+    return this.replies.length;
+})
+
+const Comment = model('Comment', CommentSchema);
 
 module.exports = Comment;

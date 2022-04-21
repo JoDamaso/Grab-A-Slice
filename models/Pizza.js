@@ -25,6 +25,7 @@ const PizzaSchema = new Schema(
 
         toppings: [],
 
+        // we push and pull to this array when we are doing our routes
         comments: [
             {
                 type: Schema.Types.ObjectId,
@@ -43,7 +44,7 @@ const PizzaSchema = new Schema(
 
 // get total count of comments and replies on retrieval
 PizzaSchema.virtual('commentCount').get(function() {
-    return this.comments.length;
+    return this.comments.reduce((total, comment) => total + comment.replies.length + 1, 0);
 });
 
 // create the Pizza model using PizzaSchema
