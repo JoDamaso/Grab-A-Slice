@@ -8,7 +8,7 @@ const request = indexedDB.open('pizza_hunt', 1);
 
 // this event will emit if the database version changes (nonexistant to version 1, v1 to v2, etc.)
 
-request.onupgradeneeded = function(event) {
+request.onupgradeneeded = function (event) {
     // save a reference to the database connection
     const db = event.target.result;
     // create an object store(table) called `new_pizza`, set it to have an auto increment primary key of sorts
@@ -16,7 +16,7 @@ request.onupgradeneeded = function(event) {
 }
 
 // upon sucessful initialization
-request.onsuccess = function(event) {
+request.onsuccess = function (event) {
     //when db is successfully created with its object store (from onupgradedneeded event above) 
     //or simply established a connection, save reference to db in global variable
     db = event.target.result;
@@ -27,7 +27,7 @@ request.onsuccess = function(event) {
     }
 };
 
-request.onerror = function(event) {
+request.onerror = function (event) {
     // log error here
     console.log(event.target.errorCode);
 };
@@ -44,18 +44,18 @@ function saveRecord(record) {
     pizzaObjectStore.add(record);
 }
 
-function uploadPizza () {
-    // open a transaction on your db
+function uploadPizza() {
+    // open a transaction on your pending db
     const transaction = db.transaction(['new_pizza'], 'readwrite');
 
-    // access the object store 
-    const pizzaObjectStore = transaction.objectStore('new_pizza'); 
+    // access your pending object store
+    const pizzaObjectStore = transaction.objectStore('new_pizza');
 
     // get all records from store and set to a variable
     const getAll = pizzaObjectStore.getAll();
 
     getAll.onsuccess = function () {
-        // if there was data in indexedDB's store, lets send it to the api server
+        // if there was data in indexedDb's store, let's send it to the api server
         if (getAll.result.length > 0) {
             fetch('/api/pizzas', {
                 method: 'POST',
@@ -65,26 +65,24 @@ function uploadPizza () {
                     'Content-Type': 'application/json'
                 }
             })
-            .then(response => response.json())
-            .then(serverResponse => {
-                if (serverResponse.message) {
-                    throw new Error(serverResponse);
-                }
-                // open one more transaction
-                const transaction = db.transaction(['new_pizza'], 'readwrite');
-                // access the new_pizza object store
-                const pizzaObjectStore = transaction.objectStore('new_pizza');
-                // clear all items in your store
-                pizzaObjectStore.clear();
+                .then(response => response.json())
+                .then(serverResponse => {
+                    if (serverResponse.message) {
+                        throw new Error(serverResponse);
+                    }
 
-                alert('All saved pizza has been submitted!');
-            })
-            .catch(err => {
-                console.log(err);
-            })
+                    const transaction = db.transaction(['new_pizza'], 'readwrite');
+                    const pizzaObjectStore = transaction.objectStore('new_pizza');
+                    // clear all items in your store
+                    pizzaObjectStore.clear();
+                })
+                .catch(err => {
+                    // set reference to redirect back here
+                    console.log(err);
+                });
         }
-    }
+    };
 }
 
-// listen for app coming back online 
-window.addeventListener('online', uploadPizza);
+// listen for app coming back online
+window.addEventListener('online', uploadPizza);
