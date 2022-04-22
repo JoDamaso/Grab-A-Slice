@@ -65,9 +65,11 @@ const handlePizzaSubmit = event => {
         alert('Pizza created successfully!!!');
         console.log(postResponse);
       })
-        .catch(err => {
-          console.log(err)
-        });
+      .catch(err => {
+        console.log(err)
+        // catch only happens on network failure
+        saveRecord(formData);
+      });
 };
 
 $pizzaForm.addEventListener('submit', handlePizzaSubmit);
